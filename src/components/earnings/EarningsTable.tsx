@@ -162,8 +162,8 @@ export default function EarningsTable() {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Filter bar */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 flex-wrap">
-        <div className="flex gap-1">
+      <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-b border-gray-100">
+        <div className="flex flex-wrap gap-1">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -182,7 +182,7 @@ export default function EarningsTable() {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+        <div className="sm:ml-auto flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
           Feb 1, 2024 – Feb 19, 2024
           <ChevronDown size={12} />
         </div>
@@ -274,7 +274,7 @@ export default function EarningsTable() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
         <p className="text-xs text-gray-400">Showing 1–8 of 42 transactions</p>
         <div className="flex items-center gap-1">
           <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors">

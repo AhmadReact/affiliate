@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Box from "@mui/material/Box";
+import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -9,6 +10,8 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import {
   LayoutDashboard,
   Users,
@@ -35,26 +38,29 @@ const navItems: NavItem[] = [
   { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
+interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
 
-  return (
+export default function Sidebar({ open = false, onClose }: SidebarProps) {
+  const pathname = usePathname();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
+
+  const content = (
     <Box
-      component="aside"
       sx={{
         width: 208,
-        minHeight: "100vh",
-        bgcolor: "background.paper",
-        borderRight: "1px solid",
-        borderColor: "divider",
         display: "flex",
         flexDirection: "column",
-        flexShrink: 0,
-        boxShadow: 1,
+        height: "100%",
       }}
     >
       {/* Logo */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2.5, py: 2.5 }}>
+      <Box
+        sx={{ display: "flex", alignItems: "center", gap: 1, px: 2.5, py: 2.5 }}
+      >
         <Box
           sx={{
             width: 32,
@@ -70,8 +76,14 @@ export default function Sidebar() {
         >
           <ChevronLeft size={16} />
         </Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary" }}>
-          Kosher<Box component="span" sx={{ color: "primary.main" }}>Phone</Box>
+        <Typography
+          variant="subtitle1"
+          sx={{ fontWeight: 700, color: "text.primary" }}
+        >
+          Kosher
+          <Box component="span" sx={{ color: "primary.main" }}>
+            Phone
+          </Box>
         </Typography>
       </Box>
 
@@ -88,6 +100,7 @@ export default function Sidebar() {
                 component={Link}
                 href={href}
                 selected={isActive}
+                onClick={!isDesktop ? onClose : undefined}
                 sx={{
                   borderRadius: 2,
                   py: 1,
@@ -113,7 +126,10 @@ export default function Sidebar() {
                 </ListItemIcon>
                 <ListItemText
                   primary={label}
-                  primaryTypographyProps={{ fontSize: "0.8125rem", fontWeight: 500 }}
+                  primaryTypographyProps={{
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                  }}
                 />
               </ListItemButton>
             </ListItem>
@@ -121,5 +137,37 @@ export default function Sidebar() {
         })}
       </List>
     </Box>
+  );
+
+  if (isDesktop) {
+    return (
+      <Box
+        component="aside"
+        sx={{
+          width: 208,
+          minHeight: "100vh",
+          bgcolor: "background.paper",
+          borderRight: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          flexDirection: "column",
+          flexShrink: 0,
+          boxShadow: 1,
+        }}
+      >
+        {content}
+      </Box>
+    );
+  }
+
+  return (
+    <Drawer
+      anchor="left"
+      open={open}
+      onClose={onClose}
+      sx={{ "& .MuiDrawer-paper": { width: 208 } }}
+    >
+      {content}
+    </Drawer>
   );
 }

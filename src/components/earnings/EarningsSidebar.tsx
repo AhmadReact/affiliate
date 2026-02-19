@@ -15,7 +15,7 @@ function SideCard({ children, className = "" }: SideCardProps) {
 
 export default function EarningsSidebar() {
   return (
-    <div className="flex flex-col gap-4 w-64 shrink-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 w-full lg:w-64 lg:shrink-0">
 
       {/* Available to Claim + Claim button */}
       <SideCard>

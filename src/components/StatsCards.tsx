@@ -175,7 +175,7 @@ export default function StatsCards() {
   return (
     <Grid container spacing={2}>
       {CARDS.map((card, i) => (
-        <Grid key={i} size={4}>
+        <Grid key={i} size={{ xs: 12, sm: 6, lg: 4 }}>
           <StatCard {...card} />
         </Grid>
       ))}
