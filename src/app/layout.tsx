@@ -17,7 +17,7 @@ export const metadata = {
   description: "Affiliate dashboard for KosherPhone – track referrals, earnings, and payouts.",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

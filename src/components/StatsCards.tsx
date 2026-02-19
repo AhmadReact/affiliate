@@ -4,9 +4,20 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
-import { TrendingUp, Users, Activity, DollarSign, CreditCard, Clock } from "lucide-react";
+import { TrendingUp, Users, Activity, DollarSign, CreditCard, Clock, LucideIcon } from "lucide-react";
 
-const CARDS = [
+interface CardData {
+  label: string;
+  value: string;
+  sub: string;
+  trend?: string;
+  period: string;
+  icon: LucideIcon;
+  accent: string;
+  accentBg: string;
+}
+
+const CARDS: CardData[] = [
   {
     label: "New Referrals",
     value: "27",
@@ -64,7 +75,9 @@ const CARDS = [
   },
 ];
 
-function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accentBg }) {
+interface StatCardProps extends CardData {}
+
+function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accentBg }: StatCardProps) {
   return (
     <Card
       elevation={0}
@@ -115,7 +128,7 @@ function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accent
           </Typography>
         </Box>
 
-        {/* Label — prominent */}
+        {/* Label */}
         <Typography
           variant="subtitle2"
           sx={{ color: "text.secondary", fontWeight: 600, mb: 0.5, fontSize: "0.8rem" }}
@@ -123,7 +136,7 @@ function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accent
           {label}
         </Typography>
 
-        {/* Value — hero */}
+        {/* Value */}
         <Typography
           sx={{
             fontSize: "1.75rem",
@@ -139,7 +152,7 @@ function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accent
 
         <Divider sx={{ mb: 1.5 }} />
 
-        {/* Footer: sub info + trend */}
+        {/* Footer */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 500 }}>
             {sub}

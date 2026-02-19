@@ -2,7 +2,24 @@
 import { useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, MoreHorizontal } from "lucide-react";
 
-const earnings = [
+type EarningStatus = "Paid" | "Claimable" | "Pending" | "Claimable in 12 days";
+
+interface Earning {
+  id: number;
+  date: string;
+  description: string;
+  descSub: string | null;
+  descAmount: string | null;
+  type: string;
+  customer: string;
+  customerSub: string | null;
+  status: EarningStatus | string;
+  amount: string;
+  running: string;
+  amountColor: string;
+}
+
+const earnings: Earning[] = [
   {
     id: 1,
     date: "Mar 1, 2024",
@@ -117,12 +134,26 @@ const earnings = [
   },
 ];
 
-const statusConfig = {
+const statusConfig: Record<string, string> = {
   Paid: "bg-blue-600 text-white",
   Claimable: "bg-teal-400 text-white",
   Pending: "bg-orange-300 text-white",
   "Claimable in 12 days": "bg-blue-100 text-blue-700 border border-blue-200",
 };
+
+interface ColumnDef {
+  label: string;
+  sortable: boolean;
+}
+
+const columns: ColumnDef[] = [
+  { label: "DATE", sortable: false },
+  { label: "DESCRIPTION", sortable: false },
+  { label: "CUSTOMER / AFFILIATE", sortable: true },
+  { label: "STATUS", sortable: false },
+  { label: "AMOUNT", sortable: false },
+  { label: "RUNNING", sortable: false },
+];
 
 export default function EarningsTable() {
   const [activeTab, setActiveTab] = useState("All");
@@ -167,14 +198,7 @@ export default function EarningsTable() {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              {[
-                { label: "DATE", sortable: false },
-                { label: "DESCRIPTION", sortable: false },
-                { label: "CUSTOMER / AFFILIATE", sortable: true },
-                { label: "STATUS", sortable: false },
-                { label: "AMOUNT", sortable: false },
-                { label: "RUNNING", sortable: false },
-              ].map(({ label, sortable }) => (
+              {columns.map(({ label, sortable }) => (
                 <th
                   key={label}
                   className="text-left px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"

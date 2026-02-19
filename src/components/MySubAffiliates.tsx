@@ -5,13 +5,30 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import { MessageSquare, Smartphone, Instagram } from "lucide-react";
 
-const affiliates = [
+interface Affiliate {
+  name: string;
+  earnings: string;
+  status: string;
+  lines: number;
+}
+
+const affiliates: Affiliate[] = [
   { name: "Levi Klein", earnings: "$2.12", status: "Active", lines: 2 },
   { name: "Moshe Beren", earnings: "$3.02", status: "Active", lines: 3 },
+];
+
+interface ChannelButton {
+  label: string;
+  icon: React.ReactElement;
+}
+
+const channelButtons: ChannelButton[] = [
+  { label: "ProBulk Message", icon: <MessageSquare size={11} style={{ color: "#2563eb" }} /> },
+  { label: "SMS", icon: <Smartphone size={11} style={{ color: "#16a34a" }} /> },
+  { label: "Instagram", icon: <Instagram size={11} style={{ color: "#ec4899" }} /> },
 ];
 
 export default function MySubAffiliates() {
@@ -69,11 +86,7 @@ export default function MySubAffiliates() {
 
         {/* Channel buttons */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, pt: 0.5, borderTop: "1px solid", borderColor: "divider" }}>
-          {[
-            { label: "ProBulk Message", icon: <MessageSquare size={11} style={{ color: "#2563eb" }} /> },
-            { label: "SMS", icon: <Smartphone size={11} style={{ color: "#16a34a" }} /> },
-            { label: "Instagram", icon: <Instagram size={11} style={{ color: "#ec4899" }} /> },
-          ].map(({ label, icon }) => (
+          {channelButtons.map(({ label, icon }) => (
             <Button
               key={label}
               variant="text"

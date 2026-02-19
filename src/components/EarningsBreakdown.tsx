@@ -12,7 +12,12 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { Calendar } from "lucide-react";
 
-const barData = [
+interface BarDataItem {
+  month: string;
+  value: number;
+}
+
+const barData: BarDataItem[] = [
   { month: "Aug", value: 320 },
   { month: "Sep", value: 480 },
   { month: "Oct", value: 390 },

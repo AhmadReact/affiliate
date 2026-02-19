@@ -17,9 +17,16 @@ import {
   Megaphone,
   Settings,
   ChevronLeft,
+  LucideIcon,
 } from "lucide-react";
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: LucideIcon;
+  href: string;
+}
+
+const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Referrals", icon: Users, href: "/referrals" },
   { label: "Network", icon: Network, href: "/network" },
