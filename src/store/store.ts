@@ -11,8 +11,12 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import appReducer from "./slices/appSlice";
-import authReducer from "./slices/authSlice";
+import authReducer, {
+  logout,
+  setAuthCredentials,
+} from "./slices/authSlice";
 import { customerApi } from "./customer/customerApi";
+import { configureApiClient } from "@/apis/client";
 
 const rootReducer = combineReducers({
   app: appReducer,
@@ -36,6 +40,12 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(customerApi.middleware),
+});
+
+configureApiClient({
+  getAuthState: () => store.getState().auth,
+  onLogout: () => store.dispatch(logout()),
+  onSetAuthCredentials: (data) => store.dispatch(setAuthCredentials(data)),
 });
 
 export const persistor = persistStore(store);

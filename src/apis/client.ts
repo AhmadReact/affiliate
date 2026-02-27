@@ -3,11 +3,10 @@ import axios, {
   AxiosRequestConfig,
   AxiosRequestHeaders,
 } from "axios";
-import { store } from "@/store/store";
-import { refreshTokenApi } from "@/apis/auth";
-import { logout, setAuthCredentials } from "@/store/slices/authSlice";
+import type { RefreshResponse } from "@/apis/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -16,10 +15,41 @@ export const apiClient = axios.create({
   },
 });
 
+type AuthStateSelector = () =>
+  | {
+      accessToken: string | null;
+      refreshToken: string | null;
+    }
+  | null;
+
+type LogoutHandler = () => void;
+type SetCredentialsHandler = (data: RefreshResponse) => void;
+
+let getAuthState: AuthStateSelector | null = null;
+let handleLogout: LogoutHandler | null = null;
+let handleSetCredentials: SetCredentialsHandler | null = null;
+
+export function configureApiClient(options: {
+  getAuthState: AuthStateSelector;
+  onLogout: LogoutHandler;
+  onSetAuthCredentials: SetCredentialsHandler;
+}) {
+  getAuthState = options.getAuthState;
+  handleLogout = options.onLogout;
+  handleSetCredentials = options.onSetAuthCredentials;
+}
+
+interface AxiosRequestConfigWithRetry extends AxiosRequestConfig {
+  _retry?: boolean;
+}
+
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
 apiClient.interceptors.request.use(
   (config) => {
-    const state = store.getState() as any;
-    const token = state.auth?.accessToken;
+    const state = getAuthState ? getAuthState() : null;
+    const token = state?.accessToken ?? null;
 
     if (token) {
       const headers = (config.headers ?? {}) as AxiosRequestHeaders;
@@ -32,13 +62,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-interface AxiosRequestConfigWithRetry extends AxiosRequestConfig {
-  _retry?: boolean;
-}
-
-let isRefreshing = false;
-let refreshPromise: Promise<void> | null = null;
-
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -49,11 +72,13 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const state = store.getState() as any;
-    const refreshToken: string | null = state.auth?.refreshToken ?? null;
+    const state = getAuthState ? getAuthState() : null;
+    const refreshToken: string | null = state?.refreshToken ?? null;
 
     if (!refreshToken) {
-      store.dispatch(logout());
+      if (handleLogout) {
+        handleLogout();
+      }
       return Promise.reject(error);
     }
 
@@ -63,10 +88,34 @@ apiClient.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true;
         refreshPromise = (async () => {
-          const data = await refreshTokenApi(refreshToken);
-          store.dispatch(setAuthCredentials(data));
+          const body = new URLSearchParams();
+          body.append("refresh_token", refreshToken);
 
-          apiClient.defaults.headers.common.Authorization = `Bearer ${data.access_token}`;
+          const response = await axios.post(
+            `${API_BASE_URL}/auth/refresh`,
+            body,
+            {
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Accept: "application/json",
+              },
+              params: {
+                company_id: COMPANY_ID,
+              },
+              maxBodyLength: Infinity,
+            },
+          );
+
+          const data = response.data as RefreshResponse;
+
+          if (handleSetCredentials) {
+            handleSetCredentials(data);
+          }
+
+          if (data.access_token) {
+            apiClient.defaults.headers.common.Authorization =
+              `Bearer ${data.access_token}`;
+          }
         })();
       }
 
@@ -84,9 +133,10 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       isRefreshing = false;
       refreshPromise = null;
-      store.dispatch(logout());
+      if (handleLogout) {
+        handleLogout();
+      }
       return Promise.reject(refreshError);
     }
   },
 );
-
