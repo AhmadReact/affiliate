@@ -1,4 +1,8 @@
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosRequestHeaders,
+} from "axios";
 import { store } from "@/store/store";
 import { refreshTokenApi } from "@/apis/auth";
 import { logout, setAuthCredentials } from "@/store/slices/authSlice";
@@ -18,10 +22,9 @@ apiClient.interceptors.request.use(
     const token = state.auth?.accessToken;
 
     if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+      const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+      headers.Authorization = `Bearer ${token}`;
+      config.headers = headers;
     }
 
     return config;
@@ -72,10 +75,10 @@ apiClient.interceptors.response.use(
       refreshPromise = null;
 
       if (!originalRequest.headers) {
-        originalRequest.headers = {};
+        originalRequest.headers = {} as AxiosRequestHeaders;
       }
-      originalRequest.headers.Authorization =
-        apiClient.defaults.headers.common.Authorization;
+      (originalRequest.headers as AxiosRequestHeaders).Authorization =
+        apiClient.defaults.headers.common.Authorization as string;
 
       return apiClient(originalRequest);
     } catch (refreshError) {

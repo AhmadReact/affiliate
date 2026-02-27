@@ -4,13 +4,13 @@ import {
   FetchBaseQueryError,
 } from "@reduxjs/toolkit/query";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { refreshTokenApi } from "@/apis/auth";
 import {
   logout,
   setAuthCredentials,
 } from "@/store/slices/authSlice";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
 
 export interface AffiliateCustomerInfo {
   total_referral: number;
@@ -143,8 +143,31 @@ const baseQueryWithReauth: BaseQueryFn<
     }
 
     try {
-      const data = await refreshTokenApi(refreshToken);
-      api.dispatch(setAuthCredentials(data));
+      const body = new URLSearchParams();
+      body.append("refresh_token", refreshToken);
+
+      const refreshResult = await rawBaseQuery(
+        {
+          url: "/auth/refresh",
+          method: "POST",
+          body,
+          params: {
+            company_id: COMPANY_ID,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        },
+        api,
+        extraOptions,
+      );
+
+      if (refreshResult.error) {
+        api.dispatch(logout());
+        return result;
+      }
+
+      api.dispatch(setAuthCredentials(refreshResult.data as any));
 
       result = await rawBaseQuery(args, api, extraOptions);
     } catch {
