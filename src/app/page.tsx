@@ -1,67 +1,110 @@
 "use client";
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import StatsCards from "@/components/StatsCards";
-import EarningsBreakdown from "@/components/EarningsBreakdown";
-import ThisMonthEarnings from "@/components/ThisMonthEarnings";
-import SubAffiliateNetwork from "@/components/SubAffiliateNetwork";
-import MySubAffiliates from "@/components/MySubAffiliates";
-import ReferralList from "@/components/ReferralList";
 
-export default function DashboardPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { loginThunk } from "@/store/slices/authSlice";
+
+export default function SignInPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!username || !password) {
+      setError("Please enter both username and password.");
+      return;
+    }
+
+    try {
+      await dispatch(loginThunk({ username, password })).unwrap();
+      router.push("/customer-dashboard");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
+      setError(message);
+    }
+  };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="max-w-md w-full">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Sign in to track your referrals, earnings, and payouts.
+          </p>
+        </div>
 
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        {/* Top header */}
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <div className="bg-white/90 backdrop-blur shadow-lg rounded-2xl p-6 sm:p-8 border border-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Username
+              </label>
+              <input
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 outline-none transition"
+                placeholder="Enter your username"
+              />
+            </div>
 
-        {/* Scrollable content area */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-5">
-          {/* Welcome */}
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-              Welcome, Daniel!
-            </h1>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Track your referrals, earnings, and payouts.
-            </p>
-          </div>
-
-          {/* Stats cards grid */}
-          <StatsCards />
-
-          {/* Bottom section: two-column layout on large screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Left column: Earnings row + Referral List stacked */}
-            <div className="lg:col-span-8 flex flex-col gap-5">
-              {/* Earnings row */}
-              <div className="grid grid-cols-1 md:grid-cols-8 gap-5">
-                <div className="md:col-span-5">
-                  <EarningsBreakdown />
-                </div>
-                <div className="md:col-span-3">
-                  <ThisMonthEarnings />
-                </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  Forgot password?
+                </button>
               </div>
-
-              {/* Referral list sits directly below earnings */}
-              <ReferralList />
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 outline-none transition"
+                placeholder="Enter your password"
+              />
             </div>
 
-            {/* Right column: Sub Affiliate Network + My Sub Affiliates */}
-            <div className="lg:col-span-4 flex flex-col gap-5">
-              <SubAffiliateNetwork />
-              <MySubAffiliates />
-            </div>
-          </div>
-        </main>
+            {(error || auth.error) && (
+              <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {error || auth.error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={auth.loading}
+              className="w-full inline-flex justify-center items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/30 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition"
+            >
+              {auth.loading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-xs text-center text-gray-400">
+            By continuing, you agree to our{" "}
+            <span className="font-medium text-gray-500">Terms</span> and{" "}
+            <span className="font-medium text-gray-500">Privacy Policy</span>.
+          </p>
+        </div>
       </div>
     </div>
   );

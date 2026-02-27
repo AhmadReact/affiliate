@@ -4,8 +4,15 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import { Users, UserCheck } from "lucide-react";
+import type { AffiliateCustomerInfo } from "@/store/customer/customerApi";
 
-export default function SubAffiliateNetwork() {
+interface SubAffiliateNetworkProps {
+  info?: AffiliateCustomerInfo;
+}
+
+export default function SubAffiliateNetwork({ info }: SubAffiliateNetworkProps) {
+  const subAffiliates = info?.total_subaffiliate_referral ?? 12;
+  const endCustomers = info?.total_subaffiliate_referred_line ?? 181;
   return (
     <Card elevation={0}>
       <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
@@ -42,8 +49,16 @@ export default function SubAffiliateNetwork() {
               <Avatar sx={{ width: 32, height: 32, bgcolor: "#eff6ff" }}>
                 <Users size={14} style={{ color: "#2563eb" }} />
               </Avatar>
-              <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600, mt: 0.5, whiteSpace: "nowrap" }}>
-                12 Sub Affiliates
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 600,
+                  mt: 0.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {subAffiliates} Sub Affiliates
               </Typography>
             </Box>
             <Box sx={{ height: 1, flex: 1, bgcolor: "grey.200" }} />
@@ -62,8 +77,16 @@ export default function SubAffiliateNetwork() {
               <Avatar sx={{ width: 32, height: 32, bgcolor: "#f0fdf4" }}>
                 <UserCheck size={14} style={{ color: "#16a34a" }} />
               </Avatar>
-              <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600, mt: 0.5, whiteSpace: "nowrap" }}>
-                181 End Customers
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.primary",
+                  fontWeight: 600,
+                  mt: 0.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {endCustomers} End Customers
               </Typography>
             </Box>
             <Box sx={{ height: 1, flex: 1, bgcolor: "grey.200" }} />

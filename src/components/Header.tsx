@@ -7,9 +7,13 @@ import Badge from "@mui/material/Badge";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { MessageSquare, Bell, Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { logout } from "@/store/slices/authSlice";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -18,6 +22,21 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+
+  const user = useAppSelector((state) => state.auth.user);
+  const displayName = user
+    ? `${user.fname}${user.lname ? ` ${user.lname}` : ""}`
+    : "Guest";
+  const initials = user
+    ? `${user.fname?.[0] ?? ""}${user.lname?.[0] ?? ""}`.toUpperCase() || "U"
+    : "G";
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.replace("/");
+  };
 
   return (
     <AppBar
@@ -84,7 +103,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               variant="subtitle2"
               sx={{ color: "text.primary", display: { xs: "none", sm: "block" } }}
             >
-              Daniel
+              {displayName}
             </Typography>
             <Avatar
               sx={{
@@ -94,8 +113,22 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 background: "linear-gradient(135deg, #60a5fa, #2563eb)",
               }}
             >
-              D
+              {initials}
             </Avatar>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                ml: 0.5,
+                textTransform: "none",
+                fontSize: 12,
+                paddingInline: 1.25,
+                paddingBlock: 0.25,
+              }}
+            >
+              Logout
+            </Button>
           </Stack>
         </Stack>
       </Toolbar>

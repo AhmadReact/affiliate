@@ -4,80 +4,38 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
-import { TrendingUp, Users, Activity, DollarSign, CreditCard, Clock, LucideIcon } from "lucide-react";
+import {
+  TrendingUp,
+  Users,
+  Activity,
+  DollarSign,
+  CreditCard,
+  Clock,
+  LucideIcon,
+} from "lucide-react";
+import type { AffiliateCustomerInfo } from "@/store/customer/customerApi";
 
 interface CardData {
   label: string;
   value: string;
   sub: string;
-  trend?: string;
   period: string;
   icon: LucideIcon;
   accent: string;
   accentBg: string;
 }
 
-const CARDS: CardData[] = [
-  {
-    label: "New Referrals",
-    value: "27",
-    sub: "103 active lines",
-    trend: "+3 this week",
-    period: "This Month",
-    icon: Users,
-    accent: "#2563eb",
-    accentBg: "#eff6ff",
-  },
-  {
-    label: "Direct Earnings",
-    value: "$734.25",
-    sub: "+ $118.40 from sub-affiliates",
-    period: "All Time",
-    icon: DollarSign,
-    accent: "#2563eb",
-    accentBg: "#eff6ff",
-  },
-  {
-    label: "Total Paid Out",
-    value: "$8,325.50",
-    sub: "$2,237.50 paid this month",
-    period: "All Time",
-    icon: CreditCard,
-    accent: "#ea580c",
-    accentBg: "#fff7ed",
-  },
-  {
-    label: "Total Referrals",
-    value: "118",
-    sub: "295 total active lines",
-    period: "All Time",
-    icon: Activity,
-    accent: "#16a34a",
-    accentBg: "#f0fdf4",
-  },
-  {
-    label: "Total Earned",
-    value: "$852.65",
-    sub: "$237.50 pending payout",
-    period: "This Month",
-    icon: TrendingUp,
-    accent: "#2563eb",
-    accentBg: "#eff6ff",
-  },
-  {
-    label: "Pending Payout",
-    value: "$237.50",
-    sub: "Next payout: Feb 28",
-    period: "All Time",
-    icon: Clock,
-    accent: "#d97706",
-    accentBg: "#fffbeb",
-  },
-];
-
 interface StatCardProps extends CardData {}
 
-function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accentBg }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  sub,
+  period,
+  icon: Icon,
+  accent,
+  accentBg,
+}: StatCardProps) {
   return (
     <Card
       elevation={0}
@@ -157,24 +115,133 @@ function StatCard({ label, value, sub, trend, period, icon: Icon, accent, accent
           <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 500 }}>
             {sub}
           </Typography>
-          {trend && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-              <TrendingUp size={11} style={{ color: "#16a34a" }} />
-              <Typography variant="caption" sx={{ color: "success.main", fontWeight: 600 }}>
-                {trend}
-              </Typography>
-            </Box>
-          )}
         </Box>
       </CardContent>
     </Card>
   );
 }
 
-export default function StatsCards() {
+interface StatsCardsProps {
+  info?: AffiliateCustomerInfo;
+}
+
+function buildCardsFromInfo(info: AffiliateCustomerInfo): CardData[] {
+  return [
+    // Current month metrics
+    {
+      label: "This Month Payout",
+      value: `$${(info.current_month_payout ?? 0).toFixed(2)}`,
+      sub: "Payouts sent this month",
+      period: "This Month",
+      icon: CreditCard,
+      accent: "#ea580c",
+      accentBg: "#fff7ed",
+    },
+    {
+      label: "This Month Referrals (Direct)",
+      value: String(info.current_month_referral ?? 0),
+      sub: "New direct referrals this month",
+      period: "This Month",
+      icon: Users,
+      accent: "#2563eb",
+      accentBg: "#eff6ff",
+    },
+    {
+      label: "This Month Referrals (Sub-Affiliates)",
+      value: String(info.current_month_subaffiliate_referral ?? 0),
+      sub: "New sub-affiliate referrals this month",
+      period: "This Month",
+      icon: Users,
+      accent: "#0f766e",
+      accentBg: "#ecfeff",
+    },
+    {
+      label: "This Month Lines (Direct)",
+      value: String(info.current_month_referred_line ?? 0),
+      sub: "New direct lines this month",
+      period: "This Month",
+      icon: Activity,
+      accent: "#1d4ed8",
+      accentBg: "#eff6ff",
+    },
+    {
+      label: "This Month Lines (Sub-Affiliates)",
+      value: String(info.current_month_subaffiliate_referred_line ?? 0),
+      sub: "New sub-affiliate lines this month",
+      period: "This Month",
+      icon: Activity,
+      accent: "#15803d",
+      accentBg: "#f0fdf4",
+    },
+
+    // Totals
+    {
+      label: "Total Referrals (Direct)",
+      value: String(info.total_referral ?? 0),
+      sub: "All-time direct referrals",
+      period: "All Time",
+      icon: Users,
+      accent: "#4b5563",
+      accentBg: "#f9fafb",
+    },
+    {
+      label: "Total Referrals (Sub-Affiliates)",
+      value: String(info.total_subaffiliate_referral ?? 0),
+      sub: "All-time sub-affiliate referrals",
+      period: "All Time",
+      icon: Users,
+      accent: "#7c3aed",
+      accentBg: "#f5f3ff",
+    },
+    {
+      label: "Total Lines (Direct)",
+      value: String(info.total_referred_line ?? 0),
+      sub: "All-time direct referred lines",
+      period: "All Time",
+      icon: Activity,
+      accent: "#0369a1",
+      accentBg: "#e0f2fe",
+    },
+    {
+      label: "Total Lines (Sub-Affiliates)",
+      value: String(info.total_subaffiliate_referred_line ?? 0),
+      sub: "All-time sub-affiliate lines",
+      period: "All Time",
+      icon: Activity,
+      accent: "#a16207",
+      accentBg: "#fefce8",
+    },
+    {
+      label: "Total Payout",
+      value: `$${(info.total_payout ?? 0).toFixed(2)}`,
+      sub: "All-time payouts sent",
+      period: "All Time",
+      icon: CreditCard,
+      accent: "#c2410c",
+      accentBg: "#ffedd5",
+    },
+    {
+      label: "Wallet Balance",
+      value: `$${(info.wallet_total ?? 0).toFixed(2)}`,
+      sub: "Available to claim",
+      period: "Current",
+      icon: TrendingUp,
+      accent: "#22c55e",
+      accentBg: "#ecfdf3",
+    },
+  ];
+}
+
+export default function StatsCards({ info }: StatsCardsProps) {
+  if (!info) {
+    return null;
+  }
+
+  const cards = buildCardsFromInfo(info);
+
   return (
     <Grid container spacing={2}>
-      {CARDS.map((card, i) => (
+      {cards.map((card, i) => (
         <Grid key={i} size={{ xs: 12, sm: 6, lg: 4 }}>
           <StatCard {...card} />
         </Grid>

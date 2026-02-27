@@ -6,11 +6,20 @@ import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
 import Button from "@mui/material/Button";
 import { Calendar } from "lucide-react";
+import type { AffiliateCustomerInfo } from "@/store/customer/customerApi";
 
-export default function ThisMonthEarnings() {
-  const total = 852.65;
-  const direct = 734.25;
-  const subAffiliate = 119.4;
+interface ThisMonthEarningsProps {
+  info?: AffiliateCustomerInfo;
+  loading?: boolean;
+}
+
+export default function ThisMonthEarnings({
+  info,
+  loading,
+}: ThisMonthEarningsProps) {
+  const direct = info?.current_month_affiliate_earning ?? 0;
+  const subAffiliate = info?.current_month_sub_affiliate_earning ?? 0;
+  const total = direct + subAffiliate || 1;
   const directPct = (direct / total) * 100;
   const subPct = (subAffiliate / total) * 100;
 
@@ -29,7 +38,7 @@ export default function ThisMonthEarnings() {
                 Direct Earnings
               </Typography>
               <Typography variant="body2" sx={{ color: "white", fontWeight: 700 }}>
-                ${direct.toFixed(2)}
+                {loading ? "..." : `$${direct.toFixed(2)}`}
               </Typography>
             </Box>
             <LinearProgress
@@ -50,7 +59,7 @@ export default function ThisMonthEarnings() {
                 Sub Affiliate
               </Typography>
               <Typography variant="body2" sx={{ color: "primary.dark", fontWeight: 700 }}>
-                ${subAffiliate.toFixed(2)}
+                {loading ? "..." : `$${subAffiliate.toFixed(2)}`}
               </Typography>
             </Box>
             <LinearProgress

@@ -1,6 +1,28 @@
 "use client";
 import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  MoreHorizontal,
+} from "lucide-react";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import {
+  useGetAffiliateWalletEarningsQuery,
+  type AffiliateWalletEarningsResponse,
+} from "@/store/customer/customerApi";
 
 type EarningStatus = "Paid" | "Claimable" | "Pending" | "Claimable in 12 days";
 
@@ -19,127 +41,99 @@ interface Earning {
   amountColor: string;
 }
 
-const earnings: Earning[] = [
-  {
-    id: 1,
-    date: "Mar 1, 2024",
-    description: "Payout",
-    descSub: null,
-    descAmount: null,
-    type: "Bank Account",
-    customer: "Bank Account",
-    customerSub: null,
-    status: "Paid",
-    amount: "-$491.50",
-    running: "$568.25",
-    amountColor: "text-red-500",
-  },
-  {
-    id: 2,
-    date: "Feb 1, 2024",
-    description: "Payout",
-    descSub: null,
-    descAmount: null,
-    type: "Bank Account",
-    customer: "Bank Account",
-    customerSub: null,
-    status: "Paid",
-    amount: "-$491.50",
-    running: "$1,059.75",
-    amountColor: "text-red-500",
-  },
-  {
-    id: 3,
-    date: "Feb 1, 2024",
-    description: "Payout",
-    descSub: null,
-    descAmount: null,
-    type: "Payout",
-    customer: "Gerriable",
-    customerSub: "Fremam, Plan, |Fliami, FL",
-    status: "Claimable",
-    amount: "$31.00",
-    running: "$1,059.75",
-    amountColor: "text-gray-800",
-  },
-  {
-    id: 4,
-    date: "Feb 1, 2024",
-    description: "Mehy 2",
-    descSub: "Sub Affiliates, Plan",
-    descAmount: "$4,341.20",
-    type: "Sub",
-    customer: "Aharon Klein",
-    customerSub: "Basic alPonsey, NY",
-    status: "Claimable",
-    amount: "$33.00",
-    running: "$1,096.25",
-    amountColor: "text-gray-800",
-  },
-  {
-    id: 5,
-    date: "Feb 1, 2024",
-    description: "Pending",
-    descSub: "Payout, Affiliates, Plan",
-    descAmount: "$1,394.31",
-    type: "Payout",
-    customer: "Levi Klein",
-    customerSub: "Sub affiliatennarmedit, J#",
-    status: "Pending",
-    amount: "$32.50",
-    running: "$1,378.25",
-    amountColor: "text-gray-800",
-  },
-  {
-    id: 6,
-    date: "Feb 1, 2024",
-    description: "Pending",
-    descSub: "Payout, Affiliates, Plan",
-    descAmount: "$1,301.30",
-    type: "Payout",
-    customer: "David Sternberg",
-    customerSub: "Planmam, FL",
-    status: "Paid",
-    amount: "$34.00",
-    running: "$1,278.50",
-    amountColor: "text-gray-800",
-  },
-  {
-    id: 7,
-    date: "Feb 1, 2024",
-    description: "Paid",
-    descSub: "Sub, Affiliates, Plan",
-    descAmount: "$1,394.25",
-    type: "Sub",
-    customer: "Sara Berg",
-    customerSub: "Planmam, Onimmtt, NJ",
-    status: "Claimable",
-    amount: "$2.50",
-    running: "$1,561.75",
-    amountColor: "text-gray-800",
-  },
-  {
-    id: 8,
-    date: "Feb 1, 2024",
-    description: "Paid",
-    descSub: "Basic, Brooklyn, NY",
-    descAmount: "$1,501.75",
-    type: "Basic",
-    customer: "J. Cohen",
-    customerSub: "Brooklyn, NY",
-    status: "Claimable in 12 days",
-    amount: "$2.50",
-    running: "$1,561.75",
-    amountColor: "text-gray-800",
-  },
-];
-
 const statusConfig: Record<string, string> = {
   Paid: "bg-blue-600 text-white",
   Claimable: "bg-teal-400 text-white",
   Pending: "bg-orange-300 text-white",
-  "Claimable in 12 days": "bg-blue-100 text-blue-700 border border-blue-200",
 };
+
+function getStatusClass(label: string): string {
+  if (label.startsWith("Claimable in ")) {
+    return "bg-blue-100 text-blue-700 border border-blue-200";
+  }
+  return statusConfig[label] ?? "bg-gray-100 text-gray-600";
+}
+
+function mapApiToEarnings(
+  api: AffiliateWalletEarningsResponse | undefined,
+): Earning[] {
+  if (!api || !api.data) return [];
+
+  return api.data.map((item) => {
+    const date = item.date
+      ? new Date(item.date).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "—";
+
+    let statusLabel: string;
+    switch (item.status) {
+      case "paid":
+        statusLabel = "Paid";
+        break;
+      case "claimable":
+        statusLabel = "Claimable";
+        break;
+      case "payment_pending":
+        statusLabel = "Pending";
+        break;
+      case "claimable_in_x_days":
+        if (item.claimable_in_days != null) {
+          statusLabel = `Claimable in ${item.claimable_in_days} days`;
+        } else {
+          statusLabel = "Claimable in 12 days";
+        }
+        break;
+      default:
+        statusLabel = item.status;
+    }
+
+    const isPayout = item.entry_type === "payout";
+
+    const amountAbs = Math.abs(item.amount);
+    const amountFormatted = `$${amountAbs.toFixed(2)}`;
+    const amountDisplay = item.amount < 0 ? `-${amountFormatted}` : amountFormatted;
+    const amountColor = item.amount < 0 ? "text-red-500" : "text-gray-800";
+
+    const running = `$${item.running_balance.toFixed(2)}`;
+
+    const customer =
+      item.customer_name ??
+      (isPayout
+        ? "Bank Account"
+        : "N/A");
+
+    const customerSub =
+      item.customer_info ?? (item.customer_name ? null : "N/A");
+
+    const descSub =
+      item.affiliate_type === "sub_affiliate"
+        ? "Sub Affiliate"
+        : item.affiliate_type === "affiliate"
+          ? "Affiliate"
+          : null;
+
+    const descAmount =
+      !isPayout && item.customer_info ? item.customer_info : null;
+
+    return {
+      id: item.id,
+      date,
+      description: isPayout ? "Payout" : item.description ?? "Earning",
+      descSub,
+      descAmount,
+      type: item.entry_type,
+      customer,
+      customerSub,
+      status: statusLabel,
+      amount: amountDisplay,
+      running,
+      amountColor,
+    };
+  });
+}
 
 interface ColumnDef {
   label: string;
@@ -157,146 +151,256 @@ const columns: ColumnDef[] = [
 
 export default function EarningsTable() {
   const [activeTab, setActiveTab] = useState("All");
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
   const tabs = ["All", "Claimable", "Pending", "Paid"];
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const { data, isLoading, isError } = useGetAffiliateWalletEarningsQuery({
+    page,
+    page_size: pageSize,
+    date_from: dateFrom || undefined,
+    date_to: dateTo || undefined,
+  });
+
+  const allRows = mapApiToEarnings(data);
+
+  const filteredEarnings = allRows.filter((row) => {
+    if (activeTab === "All") return true;
+    return row.status === activeTab;
+  });
+
+  const total = data?.total ?? filteredEarnings.length;
+  const effectivePageSize = data?.page_size ?? pageSize;
+  const pageCount = Math.max(1, Math.ceil(total / effectivePageSize));
+  const startIndex = (page - 1) * effectivePageSize;
+  const paginatedEarnings = filteredEarnings;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-b border-gray-100">
-        <div className="flex flex-wrap gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                activeTab === tab
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-          <button className="text-gray-400 hover:text-gray-600 px-2">
-            <MoreHorizontal size={15} />
-          </button>
-        </div>
-
-        <div className="sm:ml-auto flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
-          Feb 1, 2024 – Feb 19, 2024
-          <ChevronDown size={12} />
-        </div>
-      </div>
-
-      {/* Section title */}
-      <div className="px-5 py-3 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-700">Earnings Breakdown</h3>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              {columns.map(({ label, sortable }) => (
-                <th
-                  key={label}
-                  className="text-left px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
-                >
-                  <span className="flex items-center gap-1">
-                    {label}
-                    {sortable && (
-                      <ArrowUpDown size={10} className="text-gray-300" />
-                    )}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {earnings.map((row, i) => (
-              <tr
-                key={row.id}
-                className={`border-b border-gray-50 hover:bg-blue-50/30 transition-colors ${
-                  i % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
+        overflow: "hidden",
+      }}
+    >
+      <CardContent sx={{ p: 0 }}>
+        {/* Filter bar */}
+        <Box className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3 border-b border-gray-100">
+          <div className="flex flex-wrap gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setPage(1);
+                }}
+                className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                  activeTab === tab
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-500 hover:bg-gray-100"
                 }`}
               >
-                {/* Date */}
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap font-medium">
-                  {row.date}
-                </td>
-
-                {/* Description */}
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-gray-700">{row.description}</p>
-                  {row.descAmount && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">{row.descAmount}</p>
-                  )}
-                  {row.descSub && (
-                    <p className="text-[10px] text-gray-400">{row.descSub}</p>
-                  )}
-                </td>
-
-                {/* Customer / Affiliate */}
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-gray-700 whitespace-nowrap">
-                    {row.customer}
-                  </p>
-                  {row.customerSub && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">{row.customerSub}</p>
-                  )}
-                </td>
-
-                {/* Status */}
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap ${
-                      statusConfig[row.status] ?? "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {row.status}
-                  </span>
-                </td>
-
-                {/* Amount */}
-                <td className={`px-4 py-3 font-bold whitespace-nowrap ${row.amountColor}`}>
-                  {row.amount}
-                </td>
-
-                {/* Running */}
-                <td className="px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">
-                  {row.running}
-                </td>
-              </tr>
+                {tab}
+              </button>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
-        <p className="text-xs text-gray-400">Showing 1–8 of 42 transactions</p>
-        <div className="flex items-center gap-1">
-          <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors">
-            <ChevronLeft size={13} />
-          </button>
-          {[1, 2, 3].map((p) => (
-            <button
-              key={p}
-              className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium transition-colors ${
-                p === 1
-                  ? "bg-blue-600 text-white"
-                  : "border border-gray-200 text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              {p}
+            <button className="text-gray-400 hover:text-gray-600 px-2">
+              <MoreHorizontal size={15} />
             </button>
-          ))}
-          <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors">
-            <ChevronRight size={13} />
-          </button>
-        </div>
-      </div>
-    </div>
+          </div>
+
+          <Box
+            sx={{
+              ml: { sm: "auto" },
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <TextField
+              type="date"
+              size="small"
+              value={dateFrom}
+              onChange={(e) => {
+                setPage(1);
+                setDateFrom(e.target.value);
+              }}
+              label="From"
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 140 }}
+            />
+            <TextField
+              type="date"
+              size="small"
+              value={dateTo}
+              onChange={(e) => {
+                setPage(1);
+                setDateTo(e.target.value);
+              }}
+              label="To"
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 140 }}
+            />
+          </Box>
+        </Box>
+
+        {/* Section title */}
+        <Box className="px-5 py-3 border-b border-gray-100">
+          <Typography
+            variant="subtitle2"
+            className="text-sm font-semibold text-gray-700"
+          >
+            {/* Earnings Breakdown */}
+          </Typography>
+        </Box>
+
+        {/* Table */}
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow className="bg-gray-50 border-b border-gray-100">
+                {columns.map(({ label, sortable }) => (
+                  <TableCell
+                    key={label}
+                    className="text-left px-4 py-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                  >
+                    <span className="flex items-center gap-1">
+                      {label}
+                      {sortable && (
+                        <ArrowUpDown size={10} className="text-gray-300" />
+                      )}
+                    </span>
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {isLoading && (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    Loading earnings...
+                  </TableCell>
+                </TableRow>
+              )}
+              {isError && !isLoading && (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    Failed to load earnings.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isLoading &&
+                !isError &&
+                paginatedEarnings.map((row, i) => (
+                <TableRow
+                  key={row.id}
+                  className={`border-b border-gray-50 hover:bg-blue-50/30 transition-colors ${
+                    i % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                  }`}
+                >
+                  {/* Date */}
+                  <TableCell className="px-4 py-3 text-gray-600 whitespace-nowrap font-medium">
+                    {row.date}
+                  </TableCell>
+
+                  {/* Description */}
+                  <TableCell className="px-4 py-3">
+                    <p className="font-semibold text-gray-700">
+                      {row.description}
+                    </p>
+                    {row.descAmount && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {row.descAmount}
+                      </p>
+                    )}
+                    {row.descSub && (
+                      <p className="text-[10px] text-gray-400">{row.descSub}</p>
+                    )}
+                  </TableCell>
+
+                  {/* Customer / Affiliate */}
+                  <TableCell className="px-4 py-3">
+                    <p className="font-semibold text-gray-700 whitespace-nowrap">
+                      {row.customer}
+                    </p>
+                    {row.customerSub && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {row.customerSub}
+                      </p>
+                    )}
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap ${
+                        getStatusClass(row.status)
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                  </TableCell>
+
+                  {/* Amount */}
+                  <TableCell
+                    className={`px-4 py-3 font-bold whitespace-nowrap ${row.amountColor}`}
+                  >
+                    {row.amount}
+                  </TableCell>
+
+                  {/* Running */}
+                  <TableCell className="px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">
+                    {row.running}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <Divider />
+
+        {/* Pagination */}
+        <Box className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
+          <Typography variant="caption" className="text-xs text-gray-400">
+            Showing {total === 0 ? 0 : startIndex + 1}–
+            {Math.min(startIndex + effectivePageSize, total)} of {total} transactions
+          </Typography>
+          <div className="flex items-center gap-1">
+            <button
+              className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-default"
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft size={13} />
+            </button>
+            {Array.from({ length: pageCount }, (_, idx) => idx + 1).map((p) => (
+              <button
+                key={p}
+                className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium transition-colors ${
+                  p === page
+                    ? "bg-blue-600 text-white"
+                    : "border border-gray-200 text-gray-500 hover:bg-gray-50"
+                }`}
+                onClick={() => setPage(p)}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-default"
+              disabled={page === pageCount}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            >
+              <ChevronRight size={13} />
+            </button>
+          </div>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }

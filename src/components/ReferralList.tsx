@@ -11,14 +11,18 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import Button from "@mui/material/Button";
 import Pagination from "@mui/material/Pagination";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import { ChevronDown, Search, Calendar, ArrowUpDown } from "lucide-react";
+import {
+  useGetAffiliateCustomerReferralsQuery,
+  AffiliateCustomerReferralsResponse,
+} from "../store/customer/customerApi";
 
-type SimColor = "green" | "yellow" | "red";
 type StatusColor = "green" | "gray";
 
 interface Referral {
@@ -27,27 +31,75 @@ interface Referral {
   city: string;
   dateSignedUp: string;
   planType: string;
-  simStatus: string;
-  simColor: SimColor;
   monthlyElem: string;
   commsEarned: string;
   status: string;
   statusColor: StatusColor;
+  isSubAffiliate: boolean;
 }
 
 const referrals: Referral[] = [
-  { id: 1, customer: "J. Cohen", city: "Brooklyn, NY", dateSignedUp: "Feb 2, 2024", planType: "Basic", simStatus: "Active", simColor: "green", monthlyElem: "$25", commsEarned: "$56.15", status: "Active", statusColor: "green" },
-  { id: 2, customer: "David Sternberg", city: "Lakewood, NJ", dateSignedUp: "Jan 18, 2024", planType: "Premium", simStatus: "Pending SIM Shipment", simColor: "yellow", monthlyElem: "$25", commsEarned: "$31.00", status: "Active", statusColor: "green" },
-  { id: 3, customer: "Aharon Klein", city: "Monsey, NY", dateSignedUp: "Jan 18, 2024", planType: "Unlimited", simStatus: "Pending", simColor: "yellow", monthlyElem: "$25", commsEarned: "$31.00", status: "Active", statusColor: "green" },
-  { id: 4, customer: "Rivky Friedman", city: "Miami, FL", dateSignedUp: "Feb 8, 2024", planType: "Pixronum", simStatus: "Cancelled", simColor: "red", monthlyElem: "$25", commsEarned: "$82.15", status: "Active", statusColor: "green" },
-  { id: 5, customer: "Sara Berg", city: "Passaic, NJ", dateSignedUp: "Jan 30, 2024", planType: "Unlimited", simStatus: "Cancelled", simColor: "red", monthlyElem: "$25", commsEarned: "$62.25", status: "7/11", statusColor: "gray" },
+  {
+    id: 1,
+    customer: "J. Cohen",
+    city: "Brooklyn, NY",
+    dateSignedUp: "Feb 2, 2024",
+    planType: "Basic",
+    monthlyElem: "$25",
+    commsEarned: "$56.15",
+    status: "Active",
+    statusColor: "green",
+    isSubAffiliate: false,
+  },
+  {
+    id: 2,
+    customer: "David Sternberg",
+    city: "Lakewood, NJ",
+    dateSignedUp: "Jan 18, 2024",
+    planType: "Premium",
+    monthlyElem: "$25",
+    commsEarned: "$31.00",
+    status: "Active",
+    statusColor: "green",
+    isSubAffiliate: false,
+  },
+  {
+    id: 3,
+    customer: "Aharon Klein",
+    city: "Monsey, NY",
+    dateSignedUp: "Jan 18, 2024",
+    planType: "Unlimited",
+    monthlyElem: "$25",
+    commsEarned: "$31.00",
+    status: "Active",
+    statusColor: "green",
+    isSubAffiliate: false,
+  },
+  {
+    id: 4,
+    customer: "Rivky Friedman",
+    city: "Miami, FL",
+    dateSignedUp: "Feb 8, 2024",
+    planType: "Pixronum",
+    monthlyElem: "$25",
+    commsEarned: "$82.15",
+    status: "Active",
+    statusColor: "green",
+    isSubAffiliate: false,
+  },
+  {
+    id: 5,
+    customer: "Sara Berg",
+    city: "Passaic, NJ",
+    dateSignedUp: "Jan 30, 2024",
+    planType: "Unlimited",
+    monthlyElem: "$25",
+    commsEarned: "$62.25",
+    status: "7/11",
+    statusColor: "gray",
+    isSubAffiliate: false,
+  },
 ];
-
-const simChipSx: Record<SimColor, object> = {
-  green: { bgcolor: "#dcfce7", color: "#15803d" },
-  yellow: { bgcolor: "#fefce8", color: "#a16207", border: "1px solid #fde68a" },
-  red: { bgcolor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" },
-};
 
 const statusChipSx: Record<StatusColor, object> = {
   green: { bgcolor: "#dcfce7", color: "#15803d" },
@@ -55,11 +107,85 @@ const statusChipSx: Record<StatusColor, object> = {
 };
 
 const TABS = ["All", "Active", "Cancelled"];
-const COLUMNS = ["Customer", "City / State", "Date Signed Up", "Plan Type", "SIM Status", "Monthly Elem", "Comms Earned", "Status"];
+const COLUMNS = [
+  "Customer",
+  "City / State",
+  "Date Signed Up",
+  "Plan Type",
+  "Referral Type",
+  "Monthly Elem",
+  "Comms Earned",
+  "Status",
+];
 const SORTABLE = ["Date Signed Up", "Plan Type"];
+
+function mapApiToReferralRows(
+  api: AffiliateCustomerReferralsResponse | undefined
+): Referral[] {
+  if (!api || !api.data) return referrals;
+
+  return api.data.map((item) => {
+    const cityState =
+      item.city && item.state
+        ? `${item.city}, ${item.state}`
+        : item.city || item.state || "—";
+
+    const date = item.date_signed_up
+      ? new Date(item.date_signed_up).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "—";
+
+    const priceMatch = item.plan_type.match(/\$\d+(\.\d+)?/);
+    const monthlyElem = priceMatch ? priceMatch[0] : "—";
+
+    const isActive = item.status === "Active";
+
+    return {
+      id: item.id,
+      customer: item.customer_name,
+      city: cityState,
+      dateSignedUp: date,
+      planType: item.plan_type,
+      monthlyElem,
+      commsEarned: `$${item.commission_carried.toFixed(2)}`,
+      status: item.status,
+      statusColor: isActive ? "green" : "gray",
+      isSubAffiliate: item.sub_affiliate,
+    };
+  });
+}
 
 export default function ReferralList() {
   const [activeTab, setActiveTab] = useState(0);
+  const [page, setPage] = useState(1);
+  const [monthFilter, setMonthFilter] = useState<string>("");
+  const [yearFilter, setYearFilter] = useState<string>("");
+
+  // Map tabs to API status filter: all | active | cancelled
+  const statusFilter =
+    activeTab === 1 ? "active" : activeTab === 2 ? "cancelled" : "all";
+
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useGetAffiliateCustomerReferralsQuery({
+    status: statusFilter,
+    month: monthFilter ? Number(monthFilter) : undefined,
+    year: yearFilter ? Number(yearFilter) : undefined,
+    sort_by: "date_signed_up",
+    sort_dir: "desc",
+    page,
+    page_size: 20,
+  });
+
+  const rows = mapApiToReferralRows(data);
+  const total = data?.total ?? rows.length;
+  const pageSize = data?.page_size ?? 20;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <Card elevation={0}>
@@ -90,26 +216,63 @@ export default function ReferralList() {
           </Tabs>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {(["May", "May", "May"] as const).map((label, i) => (
-            <Button
-              key={i}
-              variant="outlined"
-              size="small"
-              endIcon={i === 0 ? <Calendar size={12} /> : <ChevronDown size={12} />}
-              sx={{
-                borderColor: "divider",
-                color: "text.secondary",
-                fontSize: "0.75rem",
-                py: 0.5,
-                px: 1.5,
-                minWidth: "auto",
-                "& .MuiButton-endIcon": { ml: 0.5 },
-              }}
-            >
-              {label}
-            </Button>
-          ))}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Select
+            value={monthFilter}
+            onChange={(e) => {
+              setPage(1);
+              setMonthFilter(e.target.value as string);
+            }}
+            size="small"
+            displayEmpty
+            sx={{
+              minWidth: 120,
+              fontSize: "0.75rem",
+              height: 30,
+            }}
+          >
+            <MenuItem value="">
+              <Typography variant="caption" sx={{ fontSize: "0.75rem" }}>
+                All months
+              </Typography>
+            </MenuItem>
+            <MenuItem value="1">January</MenuItem>
+            <MenuItem value="2">February</MenuItem>
+            <MenuItem value="3">March</MenuItem>
+            <MenuItem value="4">April</MenuItem>
+            <MenuItem value="5">May</MenuItem>
+            <MenuItem value="6">June</MenuItem>
+            <MenuItem value="7">July</MenuItem>
+            <MenuItem value="8">August</MenuItem>
+            <MenuItem value="9">September</MenuItem>
+            <MenuItem value="10">October</MenuItem>
+            <MenuItem value="11">November</MenuItem>
+            <MenuItem value="12">December</MenuItem>
+          </Select>
+
+          <Select
+            value={yearFilter}
+            onChange={(e) => {
+              setPage(1);
+              setYearFilter(e.target.value as string);
+            }}
+            size="small"
+            displayEmpty
+            sx={{
+              minWidth: 100,
+              fontSize: "0.75rem",
+              height: 30,
+            }}
+          >
+            <MenuItem value="">
+              <Typography variant="caption" sx={{ fontSize: "0.75rem" }}>
+                All years
+              </Typography>
+            </MenuItem>
+            <MenuItem value="2024">2024</MenuItem>
+            <MenuItem value="2025">2025</MenuItem>
+            <MenuItem value="2026">2026</MenuItem>
+          </Select>
           <IconButton size="small" sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1.5, color: "text.secondary", p: 0.75 }}>
             <Search size={13} />
           </IconButton>
@@ -134,39 +297,51 @@ export default function ReferralList() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {referrals.map((row, i) => (
-              <TableRow
-                key={row.id}
-                sx={{
-                  bgcolor: i % 2 !== 0 ? "grey.50" : "background.paper",
-                  "&:hover": { bgcolor: "#eff6ff" },
-                  "&:last-child td": { border: 0 },
-                }}
-              >
-                <TableCell sx={{ fontWeight: 600, color: "text.primary", whiteSpace: "nowrap" }}>
-                  {row.customer}
-                </TableCell>
-                <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{row.city}</TableCell>
-                <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{row.dateSignedUp}</TableCell>
-                <TableCell sx={{ color: "text.primary", whiteSpace: "nowrap" }}>{row.planType}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={row.simStatus}
-                    size="small"
-                    sx={{ height: 20, ...simChipSx[row.simColor], whiteSpace: "nowrap" }}
-                  />
-                </TableCell>
-                <TableCell sx={{ color: "text.primary", fontWeight: 500 }}>{row.monthlyElem}</TableCell>
-                <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>{row.commsEarned}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={row.status}
-                    size="small"
-                    sx={{ height: 20, ...statusChipSx[row.statusColor] }}
-                  />
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={COLUMNS.length} sx={{ textAlign: "center", py: 3 }}>
+                  Loading referrals...
                 </TableCell>
               </TableRow>
-            ))}
+            )}
+            {isError && !isLoading && (
+              <TableRow>
+                <TableCell colSpan={COLUMNS.length} sx={{ textAlign: "center", py: 3 }}>
+                  Failed to load referrals.
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading &&
+              !isError &&
+              rows.map((row, i) => (
+                <TableRow
+                  key={row.id}
+                  sx={{
+                    bgcolor: i % 2 !== 0 ? "grey.50" : "background.paper",
+                    "&:hover": { bgcolor: "#eff6ff" },
+                    "&:last-child td": { border: 0 },
+                  }}
+                >
+                  <TableCell sx={{ fontWeight: 600, color: "text.primary", whiteSpace: "nowrap" }}>
+                    {row.customer}
+                  </TableCell>
+                  <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{row.city}</TableCell>
+                  <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{row.dateSignedUp}</TableCell>
+                  <TableCell sx={{ color: "text.primary", whiteSpace: "nowrap" }}>{row.planType}</TableCell>
+                  <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>
+                    {row.isSubAffiliate ? "Sub Affiliate" : "Direct"}
+                  </TableCell>
+                  <TableCell sx={{ color: "text.primary", fontWeight: 500 }}>{row.monthlyElem}</TableCell>
+                  <TableCell sx={{ color: "text.primary", fontWeight: 600 }}>{row.commsEarned}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={row.status}
+                      size="small"
+                      sx={{ height: 20, ...statusChipSx[row.statusColor] }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -176,11 +351,13 @@ export default function ReferralList() {
       {/* Pagination */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2.5, py: 1.5 }}>
         <Typography variant="caption" sx={{ color: "text.disabled" }}>
-          Showing 1–5 of 118 referrals
+          Showing {(page - 1) * pageSize + 1}–
+          {Math.min(page * pageSize, total)} of {total} referrals
         </Typography>
         <Pagination
-          count={3}
-          defaultPage={1}
+          count={pageCount}
+          page={page}
+          onChange={(_, value) => setPage(value)}
           size="small"
           shape="rounded"
           sx={{
