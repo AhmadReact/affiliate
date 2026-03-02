@@ -1,6 +1,6 @@
-"use client";
+ "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { loginThunk } from "@/store/slices/authSlice";
@@ -13,6 +13,18 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!auth.accessToken || !auth.user) return;
+
+    const userType = auth.user.user_type;
+
+    if (userType === "staff") {
+      router.replace("/admin-dashboard/customers");
+    } else if (userType === "customer") {
+      router.replace("/customer-dashboard");
+    }
+  }, [auth.accessToken, auth.user, router]);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -23,8 +35,17 @@ export default function SignInPage() {
     }
 
     try {
-      await dispatch(loginThunk({ username, password })).unwrap();
-      router.push("/customer-dashboard");
+      const result = await dispatch(
+        loginThunk({ username, password }),
+      ).unwrap();
+
+      const userType = result.user?.user_type;
+
+      if (userType === "staff") {
+        router.push("/admin-dashboard/customers");
+      } else {
+        router.push("/customer-dashboard");
+      }
     } catch (err) {
       const message =
         err instanceof Error

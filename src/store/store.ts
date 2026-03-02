@@ -15,19 +15,23 @@ import authReducer, {
   logout,
   setAuthCredentials,
 } from "./slices/authSlice";
+import adminCompanyReducer from "./slices/adminCompanySlice";
 import { customerApi } from "./customer/customerApi";
+import { adminApi } from "./admin/adminApi";
 import { configureApiClient } from "@/apis/client";
 
 const rootReducer = combineReducers({
   app: appReducer,
   auth: authReducer,
+  adminCompany: adminCompanyReducer,
   [customerApi.reducerPath]: customerApi.reducer,
+  [adminApi.reducerPath]: adminApi.reducer,
 });
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["app", "auth"],
+  whitelist: ["app", "auth", "adminCompany"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -39,7 +43,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(customerApi.middleware),
+    }).concat(customerApi.middleware, adminApi.middleware),
 });
 
 configureApiClient({
