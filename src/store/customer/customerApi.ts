@@ -4,10 +4,7 @@ import {
   FetchBaseQueryError,
 } from "@reduxjs/toolkit/query";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import {
-  logout,
-  setAuthCredentials,
-} from "@/store/slices/authSlice";
+import { logout, setAuthCredentials } from "@/store/slices/authSlice";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 const COMPANY_ID = process.env.NEXT_PUBLIC_COMPANY_ID ?? "1";
@@ -115,6 +112,31 @@ export interface UpdateAffiliatePaymentRequest {
   preferred_payment: "paypal" | "zelle";
   payment_phone?: string;
   payment_email?: string;
+}
+
+export interface NotificationItem {
+  id: number;
+  designation: string;
+  notification_type: string;
+  customer_id: number;
+  company_id: number;
+  title: string;
+  message: string;
+  is_read: boolean;
+  metadata_json: string;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  data: NotificationItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface NotificationsQuery {
+  page?: number;
+  page_size?: number;
 }
 
 const rawBaseQuery = fetchBaseQuery({
@@ -250,6 +272,37 @@ export const customerApi = createApi({
       },
       providesTags: ["Customer"],
     }),
+    getNotifications: builder.query<
+      NotificationsResponse,
+      NotificationsQuery | void
+    >({
+      query: (params) => {
+        const { page = 1, page_size = 20 } = params || {};
+
+        return {
+          url: "/notifications",
+          params: {
+            page,
+            page_size,
+          },
+        };
+      },
+      providesTags: ["Customer"],
+    }),
+    markAllNotificationsRead: builder.mutation<void, void>({
+      query: () => ({
+        url: "/notifications/read-all",
+        method: "PUT",
+      }),
+      invalidatesTags: ["Customer"],
+    }),
+    markNotificationRead: builder.mutation<void, number>({
+      query: (notificationId) => ({
+        url: `/notifications/${notificationId}/read`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Customer"],
+    }),
     createAffiliateWalletPayout: builder.mutation<
       unknown,
       AffiliateWalletPayoutRequest
@@ -282,5 +335,7 @@ export const {
   useGetAffiliateWalletEarningsQuery,
   useCreateAffiliateWalletPayoutMutation,
   useUpdateAffiliateCustomerPaymentMutation,
+  useGetNotificationsQuery,
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
 } = customerApi;
-
