@@ -104,6 +104,7 @@ export interface AdminWalletPayout {
   reference_num?: string | null;
   note?: string | null;
   approved_by?: number | null;
+  preferred_payment?: string | null;
 }
 
 export interface AdminAffiliateCustomer {
